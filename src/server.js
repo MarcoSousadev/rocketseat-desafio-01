@@ -1,30 +1,37 @@
 import { randomUUID } from 'node:crypto'
 import http from 'node:http'
-import { title } from 'node:process'
+import { json } from './middlewares/json.js'
+import { Database } from './database.js'
 
-const tasks = []
+const taskDatabase = new Database()
 
-const server = http.createServer((req, res) =>{
+const server = http.createServer(async (req, res) => {
+  const { method, url } = req
 
-  const { method, url} = req
+  await json(req, res)
 
-  if(method === 'GET' && url === '/tasks'){
-    res.setHeader('Content-type', 'application/json').end(JSON.stringify(tasks))
+  if (method === 'GET' && url === '/tasks') {
+    const tasks = taskDatabase.select
+
+    return res.end(JSON.stringify(tasks))
   }
-  if(method === 'POST' && url === '/tasks' ){
-    tasks.push({
-      id:randomUUID(),
-      title:null,
-      descriptiom: null,
-      completed_at: null,
-      created_at: null,
-      updated_at:null,  
+  if (method === 'POST' && url === '/tasks') {
+    const { taskTitle, description, completed_at, created_at, updated_at } =
+      req.body
+    const tasks = {
+      id: randomUUID(),
+      taskTitle,
+      description,
+      completed_at,
+      created_at,
+      updated_at
+    }
 
-  })
-  return res.writeHead(201).end()
-}
-return res.end()
-  
+    taskDatabase.insert('tasks', tasks)
+
+    return res.writeHead(201).end()
+  }
+  return res.end()
 })
 
 server.listen(3333)

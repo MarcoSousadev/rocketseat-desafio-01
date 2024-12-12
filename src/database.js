@@ -19,8 +19,16 @@ export class Database {
     fs.writeFile(taskDatabase, JSON.stringify(this.#taskDatabase))
   }
 
-  select(table) {
-    const data = this.#taskDatabase[table] ?? []
+  select(table, search) {
+    let data = this.#taskDatabase[table] ?? []
+
+    if (search) {
+      data = data.filter(row => {
+        return Object.entries(search).some(([key, value]) => {
+          return row[key].includes(value)
+        })
+      })
+    }
 
     return data
   }
@@ -35,5 +43,23 @@ export class Database {
     this.#persist()
 
     return data
+  }
+
+  update(table, id, data) {
+    const rowIndex = this.#taskDatabase[table].findIndex(row => row.id === id)
+
+    if (rowIndex > -1) {
+      this.#taskDatabase[table][rowIndex] = { id, ...data }
+      this.#persist
+    }
+  }
+
+  delete(table, id) {
+    const rowIndex = this.#taskDatabase[table].findIndex(row => row.id === id)
+
+    if (rowIndex > -1) {
+      this.#taskDatabase[table].splice(rowIndex, 1)
+      this.#persist
+    }
   }
 }
